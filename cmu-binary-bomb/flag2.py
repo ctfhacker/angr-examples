@@ -15,18 +15,20 @@ def main():
         return
 
     bomb_explode = 0x40143a
-# I thought this would work, but ended up doing stack_push instead
-# rsp = 0x7fffffffdcf0
 
+    # Start analysis at the phase_2 function after the sscanf
     state = proj.factory.blank_state(addr=0x400f0a)
-# rsp = state.memory.load(state.regs.rsp)
 
-    for i in xrange(1, 6):
-        # state.memory.store(rsp + i*4, state.se.BVS('int{}'.format(i), 4*8))
+    # Sscanf is looking for '%d %d %d %d %d %d' which ends up dropping 6 ints onto the stack
+    # We will create 6 symbolic values onto the stack to mimic this 
+    for i in xrange(6):
         state.stack_push(state.se.BVS('int{}'.format(i), 4*8))
 
+    # Attempt to find a path to the end of the phase_2 function while avoiding the bomb_explode
     path = proj.factory.path(state=state)
-    ex = proj.surveyors.Explorer(start=path, find=(0x400f3c,), avoid=(bomb_explode, 0x400f10, 0x400f20,), enable_veritesting=True)
+    ex = proj.surveyors.Explorer(start=path, find=(0x400f3c,),
+                                 avoid=(bomb_explode, 0x400f10, 0x400f20,),
+                                 enable_veritesting=True)
     ex.run()
     if ex.found:
         found = ex.found[0].state
@@ -35,7 +37,11 @@ def main():
 
         for x in xrange(3):
             curr_int = found.se.any_int(found.stack_pop())
-            # Totally forgot how this should work - 0.0
+
+            # We are popping off 8 bytes at a time
+            # 0x0000000200000001
+            
+            # This is just one way to extract the individual numbers from this popped value
             answer.append(str(curr_int & 0xffff))
             answer.append(str(curr_int>>32 & 0xffff))
 
