@@ -45,11 +45,11 @@ def main():
             answer.append(str(curr_int & 0xffff))
             answer.append(str(curr_int>>32 & 0xffff))
 
-        print("Flag 2:")
-        print(' '.join(answer))
+        return ' '.join(answer)
 
 def test():
     assert main() == '1 2 4 8 16 32'
 
 if __name__ == '__main__':
-    main()
+    print("Flag 2:")
+    print(main())
